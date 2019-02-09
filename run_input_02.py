@@ -122,12 +122,13 @@ app = Flask(__name__)
 @app.route('/fig/', methods=['GET'])
 def fig():
 
-    dec = float(request.args.get('dec',''))
-    print('>>> Requested slice at dec: ', dec)
+    dec = float(request.args.get('dec'))
+    ra  = float(request.args.get('ra'))
+    print('>>> Requested slice centered at ra, dec: ', ra, dec)
     
     #ima = get_slice_simple( vol_den, ra=190, dec=dec, ra_delta=80, n_ra=256, n_z=256)
 
-    ima = get_slice_correct(vol_den, ra=190, dec=dec, ra_delta=80, n_ra=256, n_z=256)
+    ima = get_slice_correct(vol_den, ra=ra, dec=dec, ra_delta=80, n_ra=256, n_z=256)
 
     fig, ax = plt.subplots(1)
     plt.imshow(ima,interpolation="none", origin='lower',cmap='gray')
