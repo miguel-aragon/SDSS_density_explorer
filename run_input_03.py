@@ -2,7 +2,12 @@
 #
 #  Check where it is running and the crerate a url with ra and dec coordinates:
 #
+#
+#     //--- Get image
 #     http://127.0.0.1:5000/fig/?ra=190&dec=1
+#
+#     //--- Get profile
+#     http://127.0.0.1:5000/profile/?ra=190&dec=1
 #
 # -----------------------------------------------------------------
 #
@@ -119,6 +124,29 @@ print('>>> Reading volume')
 
 
 app = Flask(__name__)
+
+#--------------------------------------------
+#
+#--------------------------------------------
+@app.route('/profile/', methods=['GET'])
+def profile():
+
+    dec = float(request.args.get('dec'))
+    ra  = float(request.args.get('ra'))
+    print('>>> Requested slice centered at ra, dec: ', ra, dec)
+    
+    #ima = get_slice_simple( vol_den, ra=190, dec=dec, ra_delta=80, n_ra=256, n_z=256)
+
+    ima = get_slice_correct(vol_den, ra=ra, dec=dec, ra_delta=80, n_ra=256, n_z=256)
+
+    fig, ax = plt.subplots(1)
+    plt.plot(ima[:,127],color='red')
+    canvas = FigureCanvas(fig)
+    img = BytesIO()
+    fig.savefig(img)
+    img.seek(0)
+    
+    return send_file(img, mimetype='image/png')
 
 #--------------------------------------------
 #
