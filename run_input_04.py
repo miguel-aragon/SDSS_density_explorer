@@ -1,6 +1,6 @@
 #
 #
-#  Working version, no interpolation of datacube  
+#  Working version, uses fast interpolation
 #
 #
 #
@@ -17,6 +17,9 @@ from flask import Flask, render_template, send_file, make_response, request
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
+from interp3d import interp_3d
+from scipy.interpolate import RegularGridInterpolator
+
 sys.path.insert(0, '/Users/miguel/.local/python_utils/')
 sys.path.insert(0, '/Users/miguel/.local/python_utils/SDSS/')
 from Volumes.volumes import read_fvolume
@@ -29,7 +32,7 @@ from sdss_get_los import *
 #--------------------------------------------
 #
 #--------------------------------------------
-def get_sphere_simple(vol_den, ra, dec, reds, n_lon, n_lat, radius):
+def get_sphere_simple(vol_den, interp, ra, dec, reds, n_lon, n_lat, radius):
     HubbleParam = 73.0
     c_light     = 300000.0
     
@@ -66,9 +69,10 @@ def get_sphere_simple(vol_den, ra, dec, reds, n_lon, n_lat, radius):
             yl = yt/max_l + y0
             zl = zt/max_l + z0
 
-            #print(i,j, ' / ', xl,yl,zl)
-            #--- Sample volume with LOS
-            ima[i,j] = np.power(vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)],0.2)
+            #--- Sample volume
+            #vol_den_ijk = vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)]
+            vol_den_ijk = interp((xl*1024, yl*1024, zl*1024))
+            ima[i,j] = np.power(vol_den_ijk,0.2)
 
     ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
@@ -79,7 +83,7 @@ def get_sphere_simple(vol_den, ra, dec, reds, n_lon, n_lat, radius):
 #--------------------------------------------
 #
 #--------------------------------------------
-def get_reds_slice_simple(vol_den, ra, dec, reds, ra_delta, dec_delta, n_ra, n_dec):
+def get_reds_slice_simple(vol_den, interp, ra, dec, reds, ra_delta, dec_delta, n_ra, n_dec):
     HubbleParam = 73.0
     c_light     = 300000.0
 
@@ -108,9 +112,10 @@ def get_reds_slice_simple(vol_den, ra, dec, reds, ra_delta, dec_delta, n_ra, n_d
             yl = yl/max_l + y0
             zl = zl/max_l + z0
 
-            #print(i,j, ' / ', xl,yl,zl)
-            #--- Sample volume with LOS
-            ima[i,j] = np.power(vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)],0.2)
+            #--- Sample volume
+            #vol_den_ijk = vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)]
+            vol_den_ijk = interp((xl*1024, yl*1024, zl*1024))            
+            ima[i,j] = np.power(vol_den_ijk,0.2)
 
     ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
@@ -146,11 +151,12 @@ def make_dec_slice(_ra, _dec, _ra_delta, _ra_n):
     return ra2, dec2
 
 
+
 #--------------------------------------------
 #
 #--------------------------------------------
-    #get_dec_slice_correct(vol_den, ra=ra, dec=dec, reds=reds, ra_delta=ra_delta, reds_delta=reds_delta, n_ra=n_ra, n_reds=n_reds)
-def get_dec_slice_correct(vol_den, ra, dec, reds, ra_delta, reds_delta, n_ra, n_reds):
+
+def get_dec_slice_correct(vol_den, interp, ra, dec, reds, ra_delta, reds_delta, n_ra, n_reds):
     HubbleParam = 73.0
    
     z1, z2 = reds=reds-reds_delta/2, reds+reds_delta/2  # Initial redshift
@@ -164,11 +170,16 @@ def get_dec_slice_correct(vol_den, ra, dec, reds, ra_delta, reds_delta, n_ra, n_
         #--- Compute 3D coordinates of LOS
         xl,yl,zl = sdss_get_los(ra_new[i],dec_new[i],z1,z2,n_reds, HubbleParam)
         #--- Sample volume with LOS
-        ima[i,:] = np.power(vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)],0.2)
+        #ima[i,:] = np.power(vol_den[(xl*1024).astype(int),(yl*1024).astype(int),(zl*1024).astype(int)],0.2)
+        for j in range(n_reds):
+            vol_den_ijk = interp((xl[j]*1024, yl[j]*1024, zl[j]*1024))  
+            ima[i,j] = np.power(vol_den_ijk,0.2)
+
 
     ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
     return ima
+
 
 #========================================================================
 
@@ -184,6 +195,19 @@ vol_den = read_fvolume(PATH_DEN + FILE_DEN)
 print('>>>    ready!')
 
 
+#--- Cython implementation of interpolation uses float_t (double)
+vol_den = np.asfarray( vol_den, dtype='float' )
+
+#--- Hard-coded grid size, bad programming.
+x = np.linspace(0,1023,1024)
+y = np.linspace(0,511,512)
+z = np.linspace(0,511,512)
+
+X,Y,Z = np.meshgrid(x,y,z,indexing='ij')
+interp = interp_3d.Interp3D(vol_den, x,y,z)
+
+
+#========================================================================
 
 app = Flask(__name__)
 
@@ -231,7 +255,7 @@ def sky_sphere():
     n_lat  = int(request.args.get('n_lat'))
     print('>>> Requested sphere around galaxy at ra, dec, z:', ra, dec, reds)
 
-    ima = get_sphere_simple(vol_den, ra=ra, dec=dec, reds=reds, n_lon=n_lon, n_lat=n_lat, radius=radius)
+    ima = get_sphere_simple(vol_den, interp, ra=ra, dec=dec, reds=reds, n_lon=n_lon, n_lat=n_lat, radius=radius)
     
     x1 = 0
     x2 = 360
@@ -273,7 +297,7 @@ def slice_dec():
     n_reds      = int(request.args.get('n_reds'))
     print('>>> Requested slice centered at ra, dec, z: ', ra, dec, reds)
     
-    ima = get_dec_slice_correct(vol_den, ra=ra, dec=dec, reds=reds, ra_delta=ra_delta, reds_delta=reds_delta, n_ra=n_ra, n_reds=n_reds)
+    ima = get_dec_slice_correct(vol_den, interp, ra=ra, dec=dec, reds=reds, ra_delta=ra_delta, reds_delta=reds_delta, n_ra=n_ra, n_reds=n_reds)
 
     x1 = -ra_delta/2
     x2 =  ra_delta/2
@@ -314,7 +338,7 @@ def slice_reds():
     print('>>> Requested a slice with geometry         :', ra_delta, dec_delta, n_ra, n_dec)
     
     # def get_reds_slice_simple(vol_den, ra, dec, reds, ra_delta, dec_delta, n_ra=32, n_dec=32):
-    ima = get_reds_slice_simple(vol_den, ra=ra, dec=dec, reds=reds, ra_delta=ra_delta, dec_delta=dec_delta, n_ra=n_ra, n_dec=n_dec)
+    ima = get_reds_slice_simple(vol_den, interp, ra=ra, dec=dec, reds=reds, ra_delta=ra_delta, dec_delta=dec_delta, n_ra=n_ra, n_dec=n_dec)
 
     x1 = -ra_delta/2
     x2 =  ra_delta/2
