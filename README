@@ -1,0 +1,38 @@
+
+Based on https://www.codementor.io/@dushyantbgs/deploying-a-flask-application-to-aws-gnva38cf0
+
+   sudo apt-get update
+   sudo apt-get install python3-pip
+
+   sudo pip install numpy
+   sudo pip install matplotlib
+   sudo pip install flask
+
+Run instance as:
+
+   sudo python3 app.py
+
+See blog for instructions on how to see app from the browser
+
+
+------------------------------------------------
+
+From our side we must generate a key and give it permissions:
+
+   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstancesLinux.html
+   
+      sudo chmod 600 deepsky.pem
+      ssh -i deepsky.pem ubuntu@ec2-18-221-54-94.us-east-2.compute.amazonaws.com
+
+The user name "ubuntu" is explained here:
+
+   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connection-prereqs.html#connection-prereqs-get-info-about-instance
+
+-----------------
+
+Notes:
+
+ - Flask uses the port 5000 by default, you must specify port 80 as:
+
+   if __name__ == "__main__":
+       app.run(host="0.0.0.0", port=80)
