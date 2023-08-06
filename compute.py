@@ -193,9 +193,33 @@ def get_reds_slice_simple(vol_den, interp, target, ra_delta, dec_delta, n_ra, n_
     return ima
 
 #--------------------------------------------
-#   Makes a slice at dec
+#   Makes a slice at ra
+#--------------------------------------------
+def make_ra_slice(_ra, _dec, _dec_delta, _dec_n):
+    #--- Make array of ra positions at equator
+    dec1 = _dec - _dec_delta/2
+    dec2 = _dec + _dec_delta/2
+    decs  = np.arange(dec1,dec2, (dec2-dec1)/_dec_n)
+    ras   = np.zeros(_dec_n) + _ra
+    
+    return ras, decs
+
+#--------------------------------------------
+#   Makes a slice at ra
 #--------------------------------------------
 def make_dec_slice(_ra, _dec, _ra_delta, _ra_n):
+    #--- Make array of ra positions at equator
+    ra1 = _ra - _ra_delta/2
+    ra2 = _ra + _ra_delta/2
+    ras  = np.arange(ra1,ra2, (ra2-ra1)/_ra_n)
+    decs = np.zeros(_ra_n) + _dec
+    
+    return ras, decs
+
+#--------------------------------------------
+#   Makes a slice at dec
+#--------------------------------------------
+def make_dec_slice2(_ra, _dec, _ra_delta, _ra_n):
     #--- Make array of ra positions at equator
     ra1 = _ra - _ra_delta/2
     ra2 = _ra + _ra_delta/2
@@ -258,7 +282,7 @@ def make_ra_slice(_ra, _dec, _dec_delta, _dec_n):
     #--- Make array of ra positions at equator
     dec1 = _dec - _dec_delta/2
     dec2 = _dec + _dec_delta/2
-    decs  = np.arange(dec1,dec2, (dec2-dec1)/_dec_n)    
+    decs  = np.arange(dec1,dec2, (dec2-dec1)/_dec_n)
     ras   = np.zeros(_dec_n) + _ra
     
     return ras, decs
