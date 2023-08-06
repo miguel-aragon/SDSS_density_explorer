@@ -152,9 +152,8 @@ def get_sphere_simple(vol_den, interp, target, n_lon, n_lat, radius, mapp):
             #--- Sample volume
             #vol_den_ijk = vol_den[(xl*mapp['max_l']).astype(int),(yl*mapp['max_l']).astype(int),(zl*mapp['max_l']).astype(int)]
             vol_den_ijk = interp((xl*mapp['max_l'], yl*mapp['max_l'], zl*mapp['max_l']))
-            ima[i,j] = np.power(vol_den_ijk,0.2)
+            ima[i,j] = vol_den_ijk
 
-    ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
     return ima
 
@@ -188,9 +187,8 @@ def get_reds_slice_simple(vol_den, interp, target, ra_delta, dec_delta, n_ra, n_
             #--- Sample volume
             #vol_den_ijk = vol_den[(xl*mapp['max_l']).astype(int),(yl*mapp['max_l']).astype(int),(zl*mapp['max_l']).astype(int)]
             vol_den_ijk = interp((xl*mapp['max_l'], yl*mapp['max_l'], zl*mapp['max_l']))            
-            ima[i,j] = np.power(vol_den_ijk,0.2)
+            ima[i,j] = vol_den_ijk
 
-    ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
     return ima
 
@@ -247,10 +245,8 @@ def get_dec_slice(vol_den, interp, target, ra_delta, reds_delta, n_ra, n_reds, m
         #ima[i,:] = np.power(vol_den[(xl*mapp['max_l']).astype(int),(yl*mapp['max_l']).astype(int),(zl*mapp['max_l']).astype(int)],0.2)
         for j in range(n_reds):
             vol_den_ijk = interp((xl[j]*mapp['max_l'], yl[j]*mapp['max_l'], zl[j]*mapp['max_l']))  
-            ima[i,j] = np.power(vol_den_ijk,0.2)
+            ima[i,j] = vol_den_ijk
 
-
-    ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
     
     return ima
@@ -287,8 +283,7 @@ def get_ra_slice(vol_den, interp, target, dec_delta, reds_delta, n_dec, n_reds, 
         #ima[i,:] = np.power(vol_den[(xl*mapp['max_l']).astype(int),(yl*mapp['max_l']).astype(int),(zl*mapp['max_l']).astype(int)],0.2)
         for j in range(n_reds):
             vol_den_ijk = interp((xl[j]*mapp['max_l'], yl[j]*mapp['max_l'], zl[j]*mapp['max_l']))  
-            ima[i,j] = np.power(vol_den_ijk,0.2)
+            ima[i,j] = vol_den_ijk
 
-    ima = ima / np.max(ima)*255
     ima = np.transpose(ima)
     return ima
