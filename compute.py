@@ -207,7 +207,7 @@ def make_ra_slice(_ra, _dec, _dec_delta, _dec_n):
 #--------------------------------------------
 #   Makes a slice at ra
 #--------------------------------------------
-def make_dec_slice(_ra, _dec, _ra_delta, _ra_n):
+def make_dec_slice2(_ra, _dec, _ra_delta, _ra_n):
     #--- Make array of ra positions at equator
     ra1 = _ra - _ra_delta/2
     ra2 = _ra + _ra_delta/2
@@ -219,21 +219,25 @@ def make_dec_slice(_ra, _dec, _ra_delta, _ra_n):
 #--------------------------------------------
 #   Makes a slice at dec
 #--------------------------------------------
-def make_dec_slice2(_ra, _dec, _ra_delta, _ra_n):
+def make_dec_slice(_ra, _dec, _ra_delta, _ra_n):
+    
+    #_dec = 30
+    #_ra = 180
+    
     #--- Make array of ra positions at equator
     ra1 = _ra - _ra_delta/2
     ra2 = _ra + _ra_delta/2
     ras  = np.arange(ra1,ra2, (ra2-ra1)/_ra_n) - _ra
     
     #--- From (ra, dec=0) plane to unitary vector
-    cx = np.cos(np.deg2rad(_dec))*np.cos(np.deg2rad(ras))
-    cy = np.cos(np.deg2rad(_dec))*np.sin(np.deg2rad(ras))
+    cx = np.cos(np.deg2rad(_dec*0))*np.cos(np.deg2rad(ras))
+    cy = np.cos(np.deg2rad(_dec*0))*np.sin(np.deg2rad(ras))
     cz = ras*0
     
-    #--- Rotate to dec position
+    #--- Rotate to dec position, the order matters
     cxa,cya,cza = rotate_around_axis(cx, cy, cz,  'Y', -_dec)
     cxr,cyr,czr = rotate_around_axis(cxa,cya,cza, 'Z',  _ra)
-        
+ 
     #--- Back to ra, dec, convert to degrees
     dec2  = np.rad2deg(np.arcsin(czr))
     ra2   = np.rad2deg(np.arctan2(cyr, cxr))
@@ -260,7 +264,7 @@ def get_dec_slice(vol_den, interp, target, ra_delta, reds_delta, n_ra, n_reds, m
 
     #--- Construct correct radec slice
     ra_new, dec_new =  make_dec_slice(target['ra'], target['dec'], ra_delta, n_ra)
-
+    
     ima = np.zeros((n_ra, n_reds))
     for i in range(n_ra):
         #--- Compute 3D coordinates of LOS
